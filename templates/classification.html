@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Text Classification - AI Text Analyzer{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div id="alertContainer"></div>
+    
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="fas fa-tags me-3"></i>
+            Multi-Class Text Classification
+        </h1>
+        <p class="lead text-muted">
+            Classify text into categories: Technology, Sports, Politics, Entertainment, Business, Health
+        </p>
+    </div>
+
+    <div class="row">
+        <!-- Input Panel -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Text Input
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="classificationForm">
+                        <div class="mb-3">
+                            <label for="inputText" class="form-label">Enter text to classify:</label>
+                            <textarea class="form-control" id="inputText" rows="6" 
+                                      placeholder="Type or paste your text here...&#10;&#10;Examples:&#10;• New AI breakthrough in machine learning research&#10;• Basketball team wins championship game&#10;• Government announces new policy changes"></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/10,000 characters
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-custom w-100" id="classifyBtn">
+                            <span class="loading-spinner spinner-border spinner-border-sm me-2" role="status"></span>
+                            <i class="fas fa-tags me-2"></i>
+                            Classify Text
+                        </button>
+                    </form>
+
+                    <!-- Sample Texts -->
+                    <div class="mt-4">
+                        <h6>Quick Test Samples:</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm sample-btn" 
+                                    data-text="The new iPhone features advanced AI capabilities and improved camera technology with machine learning algorithms.">
+                                📱 Technology
+                            </button>
+                            <button class="btn btn-outline-success btn-sm sample-btn" 
+                                    data-text="The basketball team secured their victory with an outstanding performance in the championship final game.">
+                                🏀 Sports
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm sample-btn" 
+                                    data-text="The government announced new policies to address climate change and environmental protection measures.">
+                                🏛️ Politics
+                            </button>
+                            <button class="btn btn-outline-info btn-sm sample-btn" 
+                                    data-text="The blockbuster movie broke box office records and received critical acclaim from audiences worldwide.">
+                                🎬 Entertainment
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm sample-btn" 
+                                    data-text="The company's quarterly earnings exceeded analyst expectations with strong revenue growth across all divisions.">
+                                💼 Business
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm sample-btn" 
+                                    data-text="Medical researchers announced breakthrough treatment showing promising results for diabetes patients.">
+                                🏥 Health
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Classification Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="noResults" class="text-center text-muted py-5">
+                        <i class="fas fa-tags fa-3x mb-3"></i>
+                        <p>Enter text and click "Classify Text" to see results</p>
+                    </div>
+
+                    <div id="resultsContainer" style="display: none;">
+                        <!-- Main Classification -->
+                        <div class="mb-4">
+                            <h6>Predicted Category:</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <span id="predictedCategory" class="badge bg-primary fs-5 me-3"></span>
+                                <div class="flex-grow-1">
+                                    <div class="progress">
+                                        <div id="categoryConfidence" class="progress-bar bg-primary" role="progressbar"></div>
+                                    </div>
+                                </div>
+                                <small class="ms-2 text-muted" id="confidenceText"></small>
+                            </div>
+                            <small class="text-muted">Model: <span id="modelUsed"></span></small>
+                        </div>
+
+                        <!-- Probability Distribution -->
+                        <div class="mb-4">
+                            <h6>Probability Distribution:</h6>
+                            <div id="probabilityChart"></div>
+                        </div>
+
+                        <!-- All Predictions -->
+                        <div class="mb-4">
+                            <h6>All Category Predictions:</h6>
+                            <div id="allPredictions"></div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-4">
+                            <button class="btn btn-outline-primary btn-sm me-2" id="saveResult">
+                                <i class="fas fa-save me-1"></i>Save Result
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="clearResults">
+                                <i class="fas fa-trash me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Information -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Classification Categories
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6><i class="fas fa-laptop-code text-primary me-2"></i>Technology</h6>
+                                <small class="text-muted">AI, software, gadgets, programming, innovation</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6><i class="fas fa-football-ball text-success me-2"></i>Sports</h6>
+                                <small class="text-muted">Games, tournaments, athletes, competitions, scores</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6><i class="fas fa-landmark text-warning me-2"></i>Politics</h6>
+                                <small class="text-muted">Elections, policies, government, legislation, diplomacy</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6><i class="fas fa-film text-info me-2"></i>Entertainment</h6>
+                                <small class="text-muted">Movies, music, TV shows, celebrities, events</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6><i class="fas fa-briefcase text-secondary me-2"></i>Business</h6>
+                                <small class="text-muted">Companies, finance, markets, startups, economy</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <h6><i class="fas fa-heartbeat text-danger me-2"></i>Health</h6>
+                                <small class="text-muted">Medicine, wellness, research, healthcare, fitness</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Form submission
+    $('#classificationForm').submit(function(e) {
+        e.preventDefault();
+        classifyText();
+    });
+
+    // Character counter
+    $('#inputText').on('input', function() {
+        const length = $(this).val().length;
+        $('#charCount').text(length);
+        
+        if (length > 10000) {
+            $('#charCount').addClass('text-danger');
+        } else {
+            $('#charCount').removeClass('text-danger');
+        }
+    });
+
+    // Sample text buttons
+    $('.sample-btn').click(function() {
+        const sampleText = $(this).data('text');
+        $('#inputText').val(sampleText).trigger('input');
+    });
+
+    // Clear results
+    $('#clearResults').click(function() {
+        clearResults();
+    });
+
+    // Save result
+    $('#saveResult').click(function() {
+        showAlert('Classification result saved!', 'success');
+    });
+});
+
+function classifyText() {
+    const text = $('#inputText').val().trim();
+    
+    if (!text) {
+        showAlert('Please enter some text to classify.', 'warning');
+        return;
+    }
+    
+    if (text.length > 10000) {
+        showAlert('Text is too long. Maximum 10,000 characters allowed.', 'danger');
+        return;
+    }
+    
+    showLoading('classifyBtn');
+    
+    $.ajax({
+        url: '/api/classify',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({text: text}),
+        dataType: 'json'
+    })
+    .done(function(data) {
+        displayClassificationResults(data);
+    })
+    .fail(function(xhr) {
+        const error = xhr.responseJSON ? xhr.responseJSON.error : 'Classification failed';
+        showAlert('Error: ' + error, 'danger');
+    })
+    .always(function() {
+        hideLoading('classifyBtn');
+    });
+}
+
+function displayClassificationResults(result) {
+    $('#noResults').hide();
+    $('#resultsContainer').show();
+    
+    const category = result.predicted_category;
+    const confidence = result.confidence;
+    
+    // Main prediction
+    $('#predictedCategory').text(category.toUpperCase())
+                           .attr('class', `badge ${getCategoryColor(category)} fs-5 me-3`);
+    
+    const confidencePercent = Math.round(confidence * 100);
+    $('#categoryConfidence').css('width', confidencePercent + '%')
+                            .attr('aria-valuenow', confidencePercent);
+    
+    $('#confidenceText').text(`${confidencePercent}% confident`);
+    $('#modelUsed').text(result.model_used || 'Unknown');
+    
+    // Create probability chart
+    createProbabilityChart(result.all_probabilities);
+    
+    // Display all predictions
+    displayAllPredictions(result.all_probabilities);
+}
+
+function createProbabilityChart(probabilities) {
+    const categories = Object.keys(probabilities);
+    const values = Object.values(probabilities);
+    
+    const data = [{
+        x: categories,
+        y: values.map(v => Math.round(v * 100)),
+        type: 'bar',
+        marker: {
+            color: categories.map(cat => getCategoryColorCode(cat))
+        }
+    }];
+    
+    const layout = {
+        title: '',
+        xaxis: { title: 'Categories' },
+        yaxis: { title: 'Probability (%)' },
+        height: 300,
+        margin: { t: 20, b: 80, l: 50, r: 20 }
+    };
+    
+    Plotly.newPlot('probabilityChart', data, layout, {responsive: true});
+}
+
+function displayAllPredictions(probabilities) {
+    const sorted = Object.entries(probabilities)
+        .sort(([,a], [,b]) => b - a);
+    
+    let html = '';
+    sorted.forEach(([category, prob], index) => {
+        const percentage = Math.round(prob * 100);
+        const isTop = index === 0;
+        
+        html += `
+            <div class="d-flex align-items-center mb-2">
+                <div class="me-3" style="width: 100px;">
+                    <span class="badge ${getCategoryColor(category)} ${isTop ? 'fs-6' : 'small'}">${category}</span>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="progress" style="height: ${isTop ? '20px' : '15px'};">
+                        <div class="progress-bar ${getCategoryColor(category).replace('bg-', 'bg-')}" 
+                             style="width: ${percentage}%" 
+                             role="progressbar"
+                             aria-valuenow="${percentage}">
+                        </div>
+                    </div>
+                </div>
+                <div class="ms-2" style="width: 50px;">
+                    <small class="fw-bold">${percentage}%</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    $('#allPredictions').html(html);
+}
+
+function getCategoryColor(category) {
+    const colors = {
+        'Technology': 'bg-primary',
+        'Sports': 'bg-success', 
+        'Politics': 'bg-warning',
+        'Entertainment': 'bg-info',
+        'Business': 'bg-secondary',
+        'Health': 'bg-danger'
+    };
+    return colors[category] || 'bg-dark';
+}
+
+function getCategoryColorCode(category) {
+    const colors = {
+        'Technology': '#0d6efd',
+        'Sports': '#198754',
+        'Politics': '#ffc107',
+        'Entertainment': '#0dcaf0',
+        'Business': '#6c757d',
+        'Health': '#dc3545'
+    };
+    return colors[category] || '#343a40';
+}
+
+function clearResults() {
+    $('#noResults').show();
+    $('#resultsContainer').hide();
+    $('#inputText').val('').trigger('input');
+}
+</script>
+{% endblock %}

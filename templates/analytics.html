@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - AI Text Analyzer{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div id="alertContainer"></div>
+    
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="fas fa-chart-line me-3"></i>
+            Analytics Dashboard
+        </h1>
+        <p class="lead text-muted">
+            Comprehensive analysis statistics and visualizations
+        </p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5" id="statsCards">
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-file-alt fa-2x mb-3"></i>
+                    <h3 class="fw-bold" id="totalAnalyses">0</h3>
+                    <p class="mb-0">Total Analyses</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-smile fa-2x mb-3 text-success"></i>
+                    <h3 class="fw-bold" id="positivePercent">0%</h3>
+                    <p class="mb-0">Positive Sentiment</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-target fa-2x mb-3 text-warning"></i>
+                    <h3 class="fw-bold" id="avgConfidence">0%</h3>
+                    <p class="mb-0">Avg. Confidence</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-2x mb-3 text-info"></i>
+                    <h3 class="fw-bold" id="lastAnalysis">Never</h3>
+                    <p class="mb-0">Last Analysis</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row g-4 mb-4">
+        <!-- Sentiment Distribution -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Sentiment Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="sentimentChart">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                            <p>No data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confidence Histogram -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Confidence Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="confidenceChart">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                            <p>No data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row g-4 mb-4">
+        <!-- Methods Comparison -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-balance-scale me-2"></i>
+                        Algorithm Performance Comparison
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="methodsChart">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-balance-scale fa-3x mb-3"></i>
+                            <p>No data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Word Cloud -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cloud me-2"></i>
+                        Word Cloud
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="wordCloudContainer">
+                        <div class="text-muted py-5">
+                            <i class="fas fa-cloud fa-3x mb-3"></i>
+                            <p>No data available</p>
+                            <button class="btn btn-outline-primary btn-sm" id="generateWordCloud" disabled>
+                                Generate Word Cloud
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Export and Management -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database me-2"></i>
+                        Data Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Export Data</h6>
+                            <p class="text-muted">Download your analysis results in various formats.</p>
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button class="btn btn-outline-primary" id="exportCSVBtn" disabled>
+                                    <i class="fas fa-file-csv me-2"></i>Export CSV
+                                </button>
+                                <button class="btn btn-outline-success" id="exportJSONBtn" disabled>
+                                    <i class="fas fa-file-code me-2"></i>Export JSON
+                                </button>
+                                <button class="btn btn-outline-danger" id="exportPDFBtn" disabled>
+                                    <i class="fas fa-file-pdf me-2"></i>Export PDF
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>System Information</h6>
+                            <div id="systemInfo">
+                                <div class="text-muted">Loading system information...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refresh Button -->
+    <div class="text-center mt-4">
+        <button class="btn btn-primary btn-custom" id="refreshData">
+            <i class="fas fa-sync-alt me-2"></i>
+            Refresh Analytics
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let analyticsData = null;
+
+$(document).ready(function() {
+    loadAnalytics();
+    
+    // Event handlers
+    $('#refreshData').click(loadAnalytics);
+    $('#generateWordCloud').click(generateWordCloud);
+    $('#exportCSVBtn').click(() => exportData('csv'));
+    $('#exportJSONBtn').click(() => exportData('json'));
+    $('#exportPDFBtn').click(() => exportData('pdf'));
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadAnalytics, 30000);
+});
+
+function loadAnalytics() {
+    showLoading('refreshData');
+    
+    // Load statistics
+    $.get('/api/statistics')
+        .done(function(data) {
+            analyticsData = data;
+            updateStatistics(data);
+            enableButtons();
+        })
+        .fail(function() {
+            showAlert('Failed to load analytics data', 'warning');
+        });
+    
+    // Load system health
+    $.get('/api/health')
+        .done(function(data) {
+            updateSystemInfo(data);
+        });
+    
+    // Load charts
+    loadCharts();
+    
+    hideLoading('refreshData');
+}
+
+function updateStatistics(data) {
+    if (!data || Object.keys(data).length === 0) {
+        $('#totalAnalyses').text('0');
+        $('#positivePercent').text('0%');
+        $('#avgConfidence').text('0%');
+        $('#lastAnalysis').text('Never');
+        return;
+    }
+    
+    // Update stat cards
+    $('#totalAnalyses').text(data.total_analyzed || 0);
+    $('#positivePercent').text(Math.round(data.positive_percentage || 0) + '%');
+    $('#avgConfidence').text(Math.round((data.confidence_stats?.mean || 0) * 100) + '%');
+    
+    // Update last analysis time
+    const now = new Date();
+    $('#lastAnalysis').text('Just now');
+}
+
+function updateSystemInfo(data) {
+    const systemInfoHTML = `
+        <div class="row">
+            <div class="col-6">
+                <small class="text-muted">Status:</small><br>
+                <span class="badge bg-success">${data.status || 'Unknown'}</span>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Models:</small><br>
+                <span class="badge ${data.sentiment_model_trained ? 'bg-success' : 'bg-warning'}">
+                    Sentiment: ${data.sentiment_model_trained ? 'Ready' : 'Training'}
+                </span><br>
+                <span class="badge ${data.classifier_model_trained ? 'bg-success' : 'bg-warning'}">
+                    Classifier: ${data.classifier_model_trained ? 'Ready' : 'Training'}
+                </span>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <small class="text-muted">Analysis History: ${data.analysis_history_count || 0} entries</small>
+            </div>
+        </div>
+    `;
+    
+    $('#systemInfo').html(systemInfoHTML);
+}
+
+function loadCharts() {
+    // Load sentiment distribution chart
+    $.get('/api/charts/sentiment_distribution')
+        .done(function(data) {
+            if (data && !data.error) {
+                Plotly.newPlot('sentimentChart', data.data, data.layout, {responsive: true});
+            }
+        })
+        .fail(function() {
+            console.log('No sentiment distribution data available');
+        });
+    
+    // Load confidence histogram
+    $.get('/api/charts/confidence_histogram')
+        .done(function(data) {
+            if (data && !data.error) {
+                Plotly.newPlot('confidenceChart', data.data, data.layout, {responsive: true});
+            }
+        })
+        .fail(function() {
+            console.log('No confidence histogram data available');
+        });
+    
+    // Load methods comparison
+    $.get('/api/charts/methods_comparison')
+        .done(function(data) {
+            if (data && !data.error) {
+                Plotly.newPlot('methodsChart', data.data, data.layout, {responsive: true});
+            }
+        })
+        .fail(function() {
+            console.log('No methods comparison data available');
+        });
+}
+
+function generateWordCloud() {
+    showLoading('generateWordCloud');
+    
+    $.get('/api/wordcloud')
+        .done(function(data) {
+            if (data.image_path) {
+                $('#wordCloudContainer').html(`
+                    <img src="${data.image_path}" class="img-fluid" alt="Word Cloud">
+                    <br><br>
+                    <button class="btn btn-outline-primary btn-sm" id="generateWordCloud">
+                        Regenerate Word Cloud
+                    </button>
+                `);
+                
+                // Re-bind event
+                $('#generateWordCloud').click(generateWordCloud);
+            }
+        })
+        .fail(function(xhr) {
+            const error = xhr.responseJSON ? xhr.responseJSON.error : 'Failed to generate word cloud';
+            showAlert(error, 'warning');
+        })
+        .always(function() {
+            hideLoading('generateWordCloud');
+        });
+}
+
+function exportData(format) {
+    if (!analyticsData || analyticsData.total_analyzed === 0) {
+        showAlert('No data available to export', 'warning');
+        return;
+    }
+    
+    // Open export URL in new window
+    window.open(`/api/export/${format}`, '_blank');
+    
+    showAlert(`Export started. Download will begin shortly.`, 'success');
+}
+
+function enableButtons() {
+    if (analyticsData && analyticsData.total_analyzed > 0) {
+        $('#generateWordCloud, #exportCSVBtn, #exportJSONBtn, #exportPDFBtn').prop('disabled', false);
+    }
+}
+
+// Custom loading function for this page
+function showLoading(buttonId) {
+    const button = document.getElementById(buttonId);
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+        button.disabled = true;
+    }
+}
+
+function hideLoading(buttonId) {
+    const button = document.getElementById(buttonId);
+    if (button) {
+        if (buttonId === 'refreshData') {
+            button.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Refresh Analytics';
+        } else if (buttonId === 'generateWordCloud') {
+            button.innerHTML = 'Generate Word Cloud';
+        }
+        button.disabled = false;
+    }
+}
+</script>
+{% endblock %}

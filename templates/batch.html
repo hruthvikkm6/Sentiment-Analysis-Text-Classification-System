@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Analysis - AI Text Analyzer{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div id="alertContainer"></div>
+    
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="fas fa-layer-group me-3"></i>
+            Batch Text Analysis
+        </h1>
+        <p class="lead text-muted">
+            Process multiple texts at once for efficient analysis
+        </p>
+    </div>
+
+    <div class="row">
+        <!-- Input Panel -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Batch Input
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Analysis Type Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Analysis Type:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="analysisType" id="sentimentType" value="sentiment" checked>
+                            <label class="btn btn-outline-primary" for="sentimentType">
+                                <i class="fas fa-smile me-2"></i>Sentiment Analysis
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="analysisType" id="classificationType" value="classification">
+                            <label class="btn btn-outline-success" for="classificationType">
+                                <i class="fas fa-tags me-2"></i>Text Classification
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Input Methods -->
+                    <ul class="nav nav-tabs mb-3" id="inputTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button">
+                                <i class="fas fa-keyboard me-2"></i>Manual Input
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="csv-tab" data-bs-toggle="tab" data-bs-target="#csv" type="button">
+                                <i class="fas fa-file-csv me-2"></i>CSV Upload
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- Manual Input Tab -->
+                        <div class="tab-pane fade show active" id="manual" role="tabpanel">
+                            <form id="batchForm">
+                                <div class="mb-3">
+                                    <label for="batchText" class="form-label">Enter texts (one per line):</label>
+                                    <textarea class="form-control" id="batchText" rows="8" 
+                                              placeholder="Enter multiple texts, one per line:&#10;&#10;I love this product!&#10;This movie is terrible.&#10;The weather is nice today.&#10;Amazing customer service experience."></textarea>
+                                    <div class="form-text">
+                                        <span id="lineCount">0</span> lines • Maximum 100 texts
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-warning btn-custom" id="analyzeBtn">
+                                    <span class="loading-spinner spinner-border spinner-border-sm me-2" role="status"></span>
+                                    <i class="fas fa-play me-2"></i>
+                                    Start Batch Analysis
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- CSV Upload Tab -->
+                        <div class="tab-pane fade" id="csv" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="csvFile" class="form-label">Upload CSV file:</label>
+                                <input class="form-control" type="file" id="csvFile" accept=".csv" disabled>
+                                <div class="form-text">
+                                    CSV should have a 'text' column. Feature coming soon!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sample Data -->
+                    <div class="mt-4">
+                        <h6>Quick Test Sample:</h6>
+                        <button class="btn btn-outline-primary btn-sm" id="loadSample">
+                            Load Sample Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Panel -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="progressContainer" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Processing Progress:</label>
+                            <div class="progress mb-2">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="progressText">0 / 0 completed</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Current Status:</strong>
+                            <div id="currentStatus" class="mt-2">
+                                <span class="badge bg-primary">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="summaryStats" style="display: none;">
+                        <h6>Quick Summary:</h6>
+                        <div id="statsContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="row mt-4" id="resultsSection" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Batch Results
+                    </h5>
+                    <div>
+                        <button class="btn btn-light btn-sm me-2" id="exportCSV">
+                            <i class="fas fa-download me-1"></i>Export CSV
+                        </button>
+                        <button class="btn btn-light btn-sm" id="exportJSON">
+                            <i class="fas fa-download me-1"></i>Export JSON
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Results Summary -->
+                    <div id="resultsSummary" class="mb-4"></div>
+                    
+                    <!-- Results Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Text</th>
+                                    <th>Result</th>
+                                    <th>Confidence</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Visualization -->
+                    <div class="mt-4">
+                        <h6>Results Visualization:</h6>
+                        <div id="resultsChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let batchResults = [];
+
+$(document).ready(function() {
+    // Form submission
+    $('#batchForm').submit(function(e) {
+        e.preventDefault();
+        startBatchAnalysis();
+    });
+
+    // Line counter
+    $('#batchText').on('input', function() {
+        const lines = $(this).val().split('\n').filter(line => line.trim().length > 0);
+        $('#lineCount').text(lines.length);
+        
+        if (lines.length > 100) {
+            $('#lineCount').addClass('text-danger');
+        } else {
+            $('#lineCount').removeClass('text-danger');
+        }
+    });
+
+    // Load sample data
+    $('#loadSample').click(function() {
+        const sampleTexts = [
+            "I absolutely love this new product! Best purchase ever!",
+            "Terrible customer service, very disappointed.",
+            "The movie was okay, nothing special.",
+            "Amazing breakthrough in artificial intelligence technology.",
+            "The basketball team won the championship yesterday.",
+            "New government policy addresses climate change concerns."
+        ];
+        
+        $('#batchText').val(sampleTexts.join('\n')).trigger('input');
+    });
+
+    // Export buttons
+    $('#exportCSV').click(() => exportResults('csv'));
+    $('#exportJSON').click(() => exportResults('json'));
+});
+
+function startBatchAnalysis() {
+    const texts = $('#batchText').val().split('\n').filter(line => line.trim().length > 0);
+    const analysisType = $('input[name="analysisType"]:checked').val();
+    
+    if (texts.length === 0) {
+        showAlert('Please enter some texts to analyze.', 'warning');
+        return;
+    }
+    
+    if (texts.length > 100) {
+        showAlert('Too many texts. Maximum 100 texts allowed.', 'danger');
+        return;
+    }
+    
+    // Show progress
+    $('#progressContainer').show();
+    $('#currentStatus').html('<span class="badge bg-warning">Processing...</span>');
+    showLoading('analyzeBtn');
+    
+    // Start analysis
+    $.ajax({
+        url: '/api/batch',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            texts: texts,
+            type: analysisType
+        }),
+        dataType: 'json'
+    })
+    .done(function(data) {
+        batchResults = data.results;
+        displayBatchResults(data.results, analysisType);
+        $('#currentStatus').html('<span class="badge bg-success">Completed</span>');
+        updateProgress(100, texts.length, texts.length);
+    })
+    .fail(function(xhr) {
+        const error = xhr.responseJSON ? xhr.responseJSON.error : 'Batch analysis failed';
+        showAlert('Error: ' + error, 'danger');
+        $('#currentStatus').html('<span class="badge bg-danger">Failed</span>');
+    })
+    .always(function() {
+        hideLoading('analyzeBtn');
+    });
+}
+
+function updateProgress(percent, completed, total) {
+    $('#progressBar').css('width', percent + '%').attr('aria-valuenow', percent);
+    $('#progressText').text(`${completed} / ${total} completed`);
+}
+
+function displayBatchResults(results, analysisType) {
+    $('#resultsSection').show();
+    
+    // Clear previous results
+    $('#resultsTableBody').empty();
+    
+    // Display summary
+    displayResultsSummary(results, analysisType);
+    
+    // Display results table
+    results.forEach((result, index) => {
+        let resultDisplay, confidenceDisplay, detailsDisplay;
+        
+        if (analysisType === 'sentiment') {
+            resultDisplay = `<span class="${getSentimentClass(result.final_sentiment)}">${result.final_sentiment}</span>`;
+            confidenceDisplay = formatConfidence(result.confidence);
+            detailsDisplay = `
+                <small>
+                    V: ${result.details.vader.sentiment}<br>
+                    TB: ${result.details.textblob.sentiment}<br>
+                    NB: ${result.details.naive_bayes.sentiment}
+                </small>
+            `;
+        } else {
+            resultDisplay = `<span class="badge ${getCategoryColor(result.predicted_category)}">${result.predicted_category}</span>`;
+            confidenceDisplay = formatConfidence(result.confidence);
+            detailsDisplay = `<small>Model: ${result.model_used}</small>`;
+        }
+        
+        const row = `
+            <tr>
+                <td class="text-truncate" style="max-width: 300px;" title="${result.text}">${result.text}</td>
+                <td>${resultDisplay}</td>
+                <td>${confidenceDisplay}</td>
+                <td>${detailsDisplay}</td>
+            </tr>
+        `;
+        
+        $('#resultsTableBody').append(row);
+    });
+    
+    // Create visualization
+    createBatchVisualization(results, analysisType);
+}
+
+function displayResultsSummary(results, analysisType) {
+    let summaryHTML = '';
+    
+    if (analysisType === 'sentiment') {
+        const sentimentCounts = {};
+        let totalConfidence = 0;
+        
+        results.forEach(result => {
+            const sentiment = result.final_sentiment;
+            sentimentCounts[sentiment] = (sentimentCounts[sentiment] || 0) + 1;
+            totalConfidence += result.confidence;
+        });
+        
+        const avgConfidence = totalConfidence / results.length;
+        
+        summaryHTML = `
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <h4 class="text-primary">${results.length}</h4>
+                        <small>Total Analyzed</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <h4 class="text-success">${sentimentCounts.positive || 0}</h4>
+                        <small>Positive</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <h4 class="text-danger">${sentimentCounts.negative || 0}</h4>
+                        <small>Negative</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3">
+                        <h4 class="text-info">${sentimentCounts.neutral || 0}</h4>
+                        <small>Neutral</small>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <p class="mb-0">Average Confidence: <strong>${(avgConfidence * 100).toFixed(1)}%</strong></p>
+            </div>
+        `;
+    } else {
+        const categoryCounts = {};
+        results.forEach(result => {
+            const category = result.predicted_category;
+            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        });
+        
+        summaryHTML = `
+            <div class="row text-center">
+                <div class="col-12 mb-3">
+                    <h4 class="text-primary">${results.length} Texts Classified</h4>
+                </div>
+            </div>
+            <div class="row">
+        `;
+        
+        Object.entries(categoryCounts).forEach(([category, count]) => {
+            summaryHTML += `
+                <div class="col-md-2 col-4 mb-2">
+                    <div class="border rounded p-2 text-center">
+                        <span class="badge ${getCategoryColor(category)} mb-1">${category}</span><br>
+                        <strong>${count}</strong>
+                    </div>
+                </div>
+            `;
+        });
+        
+        summaryHTML += '</div>';
+    }
+    
+    $('#resultsSummary').html(summaryHTML);
+}
+
+function createBatchVisualization(results, analysisType) {
+    let data, layout;
+    
+    if (analysisType === 'sentiment') {
+        const sentimentCounts = {};
+        results.forEach(result => {
+            const sentiment = result.final_sentiment;
+            sentimentCounts[sentiment] = (sentimentCounts[sentiment] || 0) + 1;
+        });
+        
+        data = [{
+            labels: Object.keys(sentimentCounts),
+            values: Object.values(sentimentCounts),
+            type: 'pie',
+            marker: {
+                colors: Object.keys(sentimentCounts).map(s => 
+                    s === 'positive' ? '#28a745' : s === 'negative' ? '#dc3545' : '#17a2b8'
+                )
+            }
+        }];
+        
+        layout = {
+            title: 'Sentiment Distribution',
+            height: 400
+        };
+    } else {
+        const categoryCounts = {};
+        results.forEach(result => {
+            const category = result.predicted_category;
+            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        });
+        
+        data = [{
+            x: Object.keys(categoryCounts),
+            y: Object.values(categoryCounts),
+            type: 'bar',
+            marker: {
+                color: Object.keys(categoryCounts).map(cat => getCategoryColorCode(cat))
+            }
+        }];
+        
+        layout = {
+            title: 'Category Distribution',
+            xaxis: { title: 'Categories' },
+            yaxis: { title: 'Count' },
+            height: 400
+        };
+    }
+    
+    Plotly.newPlot('resultsChart', data, layout, {responsive: true});
+}
+
+function exportResults(format) {
+    if (batchResults.length === 0) {
+        showAlert('No results to export.', 'warning');
+        return;
+    }
+    
+    window.open(`/api/export/${format}`, '_blank');
+}
+
+// Helper functions from classification.html
+function getCategoryColor(category) {
+    const colors = {
+        'Technology': 'bg-primary',
+        'Sports': 'bg-success', 
+        'Politics': 'bg-warning',
+        'Entertainment': 'bg-info',
+        'Business': 'bg-secondary',
+        'Health': 'bg-danger'
+    };
+    return colors[category] || 'bg-dark';
+}
+
+function getCategoryColorCode(category) {
+    const colors = {
+        'Technology': '#0d6efd',
+        'Sports': '#198754',
+        'Politics': '#ffc107',
+        'Entertainment': '#0dcaf0',
+        'Business': '#6c757d',
+        'Health': '#dc3545'
+    };
+    return colors[category] || '#343a40';
+}
+</script>
+{% endblock %}

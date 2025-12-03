@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Sentiment Analysis - AI Text Analyzer{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div id="alertContainer"></div>
+    
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="fas fa-smile me-3"></i>
+            Advanced Sentiment Analysis
+        </h1>
+        <p class="lead text-muted">
+            Analyze emotions and sentiments in text using multiple machine learning algorithms
+        </p>
+    </div>
+
+    <div class="row">
+        <!-- Input Panel -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Text Input
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="sentimentForm">
+                        <div class="mb-3">
+                            <label for="inputText" class="form-label">Enter text to analyze:</label>
+                            <textarea class="form-control" id="inputText" rows="6" 
+                                      placeholder="Type or paste your text here...&#10;&#10;Examples:&#10;• I love this new movie! It's absolutely fantastic!&#10;• This product is terrible and disappointing.&#10;• The service was okay, nothing special."></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/10,000 characters
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Analysis Options:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showDetails" checked>
+                                <label class="form-check-label" for="showDetails">
+                                    Show detailed breakdown
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-custom w-100" id="analyzeBtn">
+                            <span class="loading-spinner spinner-border spinner-border-sm me-2" role="status"></span>
+                            <i class="fas fa-search me-2"></i>
+                            Analyze Sentiment
+                        </button>
+                    </form>
+
+                    <!-- Sample Texts -->
+                    <div class="mt-4">
+                        <h6>Quick Test Samples:</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success btn-sm sample-btn" 
+                                    data-text="I absolutely love this product! The quality is outstanding and the customer service was exceptional. Highly recommended!">
+                                😊 Positive Sample
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm sample-btn" 
+                                    data-text="This is the worst experience I've ever had. The product broke immediately and the support was terrible.">
+                                😞 Negative Sample
+                            </button>
+                            <button class="btn btn-outline-info btn-sm sample-btn" 
+                                    data-text="The movie was okay. Nothing particularly good or bad about it. Just average entertainment.">
+                                😐 Neutral Sample
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Analysis Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="noResults" class="text-center text-muted py-5">
+                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                        <p>Enter text and click "Analyze Sentiment" to see results</p>
+                    </div>
+
+                    <div id="resultsContainer" style="display: none;">
+                        <!-- Overall Result -->
+                        <div class="mb-4">
+                            <h6>Overall Sentiment:</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <span id="overallSentiment" class="badge fs-6 me-3"></span>
+                                <div class="flex-grow-1">
+                                    <div class="progress">
+                                        <div id="overallConfidence" class="progress-bar" role="progressbar"></div>
+                                    </div>
+                                </div>
+                                <small class="ms-2 text-muted" id="confidenceText"></small>
+                            </div>
+                        </div>
+
+                        <!-- Voting Results -->
+                        <div class="mb-4" id="votingSection">
+                            <h6>Algorithm Consensus:</h6>
+                            <div id="votingResults"></div>
+                        </div>
+
+                        <!-- Detailed Breakdown -->
+                        <div id="detailedResults">
+                            <h6>Detailed Analysis:</h6>
+                            
+                            <!-- VADER Results -->
+                            <div class="card mb-3">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-robot me-2"></i>VADER Sentiment
+                                    </h6>
+                                    <div id="vaderResults"></div>
+                                </div>
+                            </div>
+
+                            <!-- TextBlob Results -->
+                            <div class="card mb-3">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-brain me-2"></i>TextBlob Analysis
+                                    </h6>
+                                    <div id="textblobResults"></div>
+                                </div>
+                            </div>
+
+                            <!-- Rule-based Results -->
+                            <div class="card mb-3">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-list-check me-2"></i>Rule-based Analysis
+                                    </h6>
+                                    <div id="ruleResults"></div>
+                                </div>
+                            </div>
+
+                            <!-- Naive Bayes Results -->
+                            <div class="card mb-3">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-calculator me-2"></i>Naive Bayes Model
+                                    </h6>
+                                    <div id="nbResults"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-4">
+                            <button class="btn btn-outline-primary btn-sm me-2" id="saveResult">
+                                <i class="fas fa-save me-1"></i>Save Result
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="clearResults">
+                                <i class="fas fa-trash me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis History -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent Analyses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="historyContainer">
+                        <p class="text-muted text-center">No analyses yet. Start analyzing text to see your history here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let analysisHistory = [];
+
+$(document).ready(function() {
+    // Form submission
+    $('#sentimentForm').submit(function(e) {
+        e.preventDefault();
+        analyzeSentiment();
+    });
+
+    // Character counter
+    $('#inputText').on('input', function() {
+        const length = $(this).val().length;
+        $('#charCount').text(length);
+        
+        if (length > 10000) {
+            $('#charCount').addClass('text-danger');
+        } else {
+            $('#charCount').removeClass('text-danger');
+        }
+    });
+
+    // Sample text buttons
+    $('.sample-btn').click(function() {
+        const sampleText = $(this).data('text');
+        $('#inputText').val(sampleText).trigger('input');
+    });
+
+    // Clear results
+    $('#clearResults').click(function() {
+        clearResults();
+    });
+
+    // Save result
+    $('#saveResult').click(function() {
+        showAlert('Result saved to analysis history!', 'success');
+    });
+});
+
+function analyzeSentiment() {
+    const text = $('#inputText').val().trim();
+    
+    if (!text) {
+        showAlert('Please enter some text to analyze.', 'warning');
+        return;
+    }
+    
+    if (text.length > 10000) {
+        showAlert('Text is too long. Maximum 10,000 characters allowed.', 'danger');
+        return;
+    }
+    
+    showLoading('analyzeBtn');
+    
+    $.ajax({
+        url: '/api/analyze',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({text: text}),
+        dataType: 'json'
+    })
+    .done(function(data) {
+        displayResults(data);
+        addToHistory(data);
+    })
+    .fail(function(xhr) {
+        const error = xhr.responseJSON ? xhr.responseJSON.error : 'Analysis failed';
+        showAlert('Error: ' + error, 'danger');
+    })
+    .always(function() {
+        hideLoading('analyzeBtn');
+    });
+}
+
+function displayResults(result) {
+    $('#noResults').hide();
+    $('#resultsContainer').show();
+    
+    // Overall sentiment
+    const sentiment = result.final_sentiment;
+    const confidence = result.confidence;
+    
+    $('#overallSentiment').text(sentiment.toUpperCase())
+                          .attr('class', `badge fs-6 me-3 ${getSentimentClass(sentiment)}`);
+    
+    const confidencePercent = Math.round(confidence * 100);
+    $('#overallConfidence').css('width', confidencePercent + '%')
+                           .attr('aria-valuenow', confidencePercent)
+                           .text(confidencePercent + '%');
+    
+    $('#confidenceText').text(`${confidencePercent}% confident`);
+    
+    // Voting results
+    displayVotingResults(result.voting_results);
+    
+    // Detailed results
+    if ($('#showDetails').is(':checked')) {
+        displayDetailedResults(result.details);
+        $('#detailedResults').show();
+    } else {
+        $('#detailedResults').hide();
+    }
+}
+
+function displayVotingResults(voting) {
+    let votingHtml = '<div class="row text-center">';
+    
+    Object.entries(voting).forEach(([sentiment, count]) => {
+        const percentage = Math.round((count / 4) * 100);
+        votingHtml += `
+            <div class="col-4">
+                <div class="mb-2">
+                    <span class="${getSentimentClass(sentiment)} small">${sentiment}</span>
+                </div>
+                <div class="progress mb-1" style="height: 8px;">
+                    <div class="progress-bar" style="width: ${percentage}%"></div>
+                </div>
+                <small class="text-muted">${count}/4 votes</small>
+            </div>
+        `;
+    });
+    
+    votingHtml += '</div>';
+    $('#votingResults').html(votingHtml);
+}
+
+function displayDetailedResults(details) {
+    // VADER results
+    const vader = details.vader;
+    $('#vaderResults').html(`
+        <div class="row">
+            <div class="col-6">
+                <small class="text-muted">Sentiment:</small><br>
+                <span class="${getSentimentClass(vader.sentiment)}">${vader.sentiment}</span>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Compound Score:</small><br>
+                <strong>${vader.compound.toFixed(3)}</strong>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-4">
+                <small class="text-muted">Positive:</small><br>
+                <span class="text-success">${(vader.positive * 100).toFixed(1)}%</span>
+            </div>
+            <div class="col-4">
+                <small class="text-muted">Neutral:</small><br>
+                <span class="text-info">${(vader.neutral * 100).toFixed(1)}%</span>
+            </div>
+            <div class="col-4">
+                <small class="text-muted">Negative:</small><br>
+                <span class="text-danger">${(vader.negative * 100).toFixed(1)}%</span>
+            </div>
+        </div>
+    `);
+
+    // TextBlob results
+    const textblob = details.textblob;
+    $('#textblobResults').html(`
+        <div class="row">
+            <div class="col-6">
+                <small class="text-muted">Sentiment:</small><br>
+                <span class="${getSentimentClass(textblob.sentiment)}">${textblob.sentiment}</span>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Polarity:</small><br>
+                <strong>${textblob.polarity.toFixed(3)}</strong>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <small class="text-muted">Subjectivity:</small><br>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: ${textblob.subjectivity * 100}%"></div>
+                </div>
+                <small>${(textblob.subjectivity * 100).toFixed(1)}% subjective</small>
+            </div>
+        </div>
+    `);
+
+    // Rule-based results
+    const rule = details.rule_based;
+    $('#ruleResults').html(`
+        <div class="row">
+            <div class="col-4">
+                <small class="text-muted">Sentiment:</small><br>
+                <span class="${getSentimentClass(rule.sentiment)}">${rule.sentiment}</span>
+            </div>
+            <div class="col-4">
+                <small class="text-muted">Positive Words:</small><br>
+                <span class="text-success">${rule.positive_score}</span>
+            </div>
+            <div class="col-4">
+                <small class="text-muted">Negative Words:</small><br>
+                <span class="text-danger">${rule.negative_score}</span>
+            </div>
+        </div>
+    `);
+
+    // Naive Bayes results
+    const nb = details.naive_bayes;
+    $('#nbResults').html(`
+        <div class="row">
+            <div class="col-6">
+                <small class="text-muted">Prediction:</small><br>
+                <span class="${getSentimentClass(nb.sentiment)}">${nb.sentiment}</span>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">Confidence:</small><br>
+                <strong>${(nb.confidence * 100).toFixed(1)}%</strong>
+            </div>
+        </div>
+    `);
+}
+
+function addToHistory(result) {
+    analysisHistory.unshift({
+        text: result.text.substring(0, 100) + (result.text.length > 100 ? '...' : ''),
+        sentiment: result.final_sentiment,
+        confidence: result.confidence,
+        timestamp: new Date().toLocaleString()
+    });
+    
+    // Keep only last 10 results
+    if (analysisHistory.length > 10) {
+        analysisHistory = analysisHistory.slice(0, 10);
+    }
+    
+    updateHistoryDisplay();
+}
+
+function updateHistoryDisplay() {
+    if (analysisHistory.length === 0) {
+        $('#historyContainer').html('<p class="text-muted text-center">No analyses yet.</p>');
+        return;
+    }
+    
+    let historyHtml = '<div class="table-responsive"><table class="table table-hover">';
+    historyHtml += '<thead><tr><th>Text</th><th>Sentiment</th><th>Confidence</th><th>Time</th></tr></thead><tbody>';
+    
+    analysisHistory.forEach(item => {
+        historyHtml += `
+            <tr>
+                <td class="text-truncate" style="max-width: 300px;">${item.text}</td>
+                <td><span class="${getSentimentClass(item.sentiment)} small">${item.sentiment}</span></td>
+                <td>${formatConfidence(item.confidence)}</td>
+                <td><small class="text-muted">${item.timestamp}</small></td>
+            </tr>
+        `;
+    });
+    
+    historyHtml += '</tbody></table></div>';
+    $('#historyContainer').html(historyHtml);
+}
+
+function clearResults() {
+    $('#noResults').show();
+    $('#resultsContainer').hide();
+    $('#inputText').val('').trigger('input');
+}
+</script>
+{% endblock %}
